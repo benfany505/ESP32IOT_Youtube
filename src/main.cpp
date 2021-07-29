@@ -18,7 +18,6 @@ AsyncWebServer server(80);
 // Deklarasi Fungsi / Mthod
 void connectWifi();
 void getHttp();
-
 void postHttp();
 String readDHTTemperature();
 String readDHTHumidity();
