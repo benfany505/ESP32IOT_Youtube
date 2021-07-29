@@ -15,7 +15,7 @@ String googlDotCom = "www.google.com";
 int randTemp, randHum;
 AsyncWebServer server(80);
 
-// Deklarasi Fungsi
+// Deklarasi Fungsi / Mthod
 void connectWifi();
 void getHttp();
 
