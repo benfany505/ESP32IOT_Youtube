@@ -6,22 +6,7 @@
 #include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h"
 
-// Deklarasi Variable dan Konstanta
-String wifiSSID = "smartbuilding_wifi";
-String wifiPassword = "smartbuilding@2020";
-const IPAddress routerIp(192, 168, 0, 1);
-String googlDotCom = "www.google.com";
-
-int randTemp, randHum;
 AsyncWebServer server(80);
-
-// Deklarasi Fungsi / Mthod
-void connectWifi();
-void getHttp();
-void postHttp();
-String readDHTTemperature();
-String readDHTHumidity();
-String processor(const String &var);
 
 const char realtime_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -45,14 +30,14 @@ const char realtime_html[] PROGMEM = R"rawliteral(
         <div class="container p-2">
           <h5 style="color: coral">Temperature</h5>
           <div class="card m-3">
-            <h4 class="card-body" id="temp">%TEMPERATURE%</h4>
+            <h4 class="card-body" id="temp">---</h4>
           </div>
         </div>
 
         <div class="container p-2">
           <h5 style="color: coral">Humidity</h5>
           <div class="card m-3">
-            <h4 class="card-body" id="hum">%HUMIDITY%</h4>
+            <h4 class="card-body" id="hum">---</h4>
           </div>
         </div>
       </div>
@@ -88,76 +73,74 @@ const char realtime_html[] PROGMEM = R"rawliteral(
       }, 1000 ) ;
       </script>
 
+
     
   </body>
 </html>
+
 )rawliteral";
+// Deklarasi Variable dan Konstanta
+String wifiSSID = "smartbuilding_wifi";
+String wifiPassword = "smartbuilding@2020";
+const IPAddress routerIp(192, 168, 0, 1);
+String googlDotCom = "www.google.com";
+
+int randTemp, randHum;
+
+// Deklarasi Fungsi
+void connectWifi();
+void getHttp();
+
+void postHttp();
+String readDHTTemperature();
+String readDHTHumidity();
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Serial.flush();
   connectWifi();
-
-  // Route for root / web page
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             {
-              request->send_P(200, "text/html", realtime_html, processor);
+              request->send_P(200, "text/html", realtime_html);
               Serial.println("Home");
             });
+
   server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/plain", readDHTTemperature().c_str()); });
   server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send_P(200, "text/plain", readDHTHumidity().c_str()); });
 
-  // Start server
   server.begin();
-
   // getHttp();
 }
 
 void loop()
 {
-  Serial.println("Main");
+  postHttp();
   delay(1000);
 }
+
 String readDHTTemperature()
 {
-  float randDec = random(0, 99);
-  randDec /= 100;
-  int randTemp = random(20, 35);
-  return String(randTemp + randDec);
+  randTemp = random(30, 50);
+  return String(randTemp);
 }
 
 String readDHTHumidity()
 {
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float randDec = random(0, 99);
-  randDec /= 100;
-  int randHum = random(40, 80);
-  return String(randHum + randDec);
+  randHum = random(40, 80);
+  return String(randHum);
 }
-// Replaces placeholder with DHT values
-String processor(const String &var)
-{
-  //Serial.println(var);
-  if (var == "TEMPERATURE")
-  {
-    return readDHTTemperature();
-  }
-  else if (var == "HUMIDITY")
-  {
-    return readDHTHumidity();
-  }
-  return String();
-}
+
 void postHttp()
 {
   Serial.println("Posting...");
-  String url = "http://192.168.0.93/esp32/api/api.php?data=insert";
+  String url = "http://192.168.0.93:8080/esp32/api/api.php?data=insert";
   HTTPClient http;
   String response;
 
-  StaticJsonDocument<200> buff;
+  StaticJsonDocument<512> buff;
   String jsonParams;
 
   randTemp = random(30, 50);
@@ -176,8 +159,11 @@ void postHttp()
   if (statusCode == 200)
   {
     Serial.println("Post Method Success!");
-    Serial.println("Temp : " + randTemp);
-    Serial.println("Hum : " + randHum);
+    delay(50);
+    Serial.println("Temp : " + String(randTemp));
+    delay(50);
+    Serial.println("Hum : " + String(randHum));
+    delay(50);
   }
   else
   {
@@ -185,6 +171,7 @@ void postHttp()
   }
   // Serial.println(response);
   // Serial.println(statusCode);
+  return;
 }
 
 void getHttp()
