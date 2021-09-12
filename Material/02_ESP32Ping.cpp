@@ -1,14 +1,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESP32Ping.h>
-#include <HTTPClient.h>
 
 String wifiSSID = "smartbuilding_wifi";
 String wifiPassword = "smartbuilding@2020";
-const IPAddress routerIp(192, 168, 0, 1);
 String googlDotCom = "www.google.com";
 
-void getHttp();
 
 void setup()
 {
@@ -38,7 +35,5 @@ void setup()
 
 void loop()
 {
-    Serial.println(Ping.averageTime());
-    delay(1000);
-    // put your main code here, to run repeatedly:
+   
 }

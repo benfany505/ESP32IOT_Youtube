@@ -6,7 +6,6 @@
 
 String wifiSSID = "smartbuilding_wifi";
 String wifiPassword = "smartbuilding@2020";
-const IPAddress routerIp(192, 168, 0, 1);
 String googlDotCom = "www.google.com";
 TaskHandle_t task_1;
 TaskHandle_t task_2;
