@@ -42,5 +42,18 @@
 			"\tSerial.println(WiFi.dnsIP());",
 			"}"
 		]
+	},
+
+	"Random Value Decimal" : {
+		"prefix": "randDecS",
+		"body": [
+			"String ${1:functionName}()",
+			"{",
+			"\tfloat randDec = random(0, 99);",
+			"\trandDec /= 100;",
+			"\tint randVal = random(${2:minVal}, ${3:maxVal});",
+			"\treturn String(randVal + randDec);",
+			"}"
+		]
 	}
 }
