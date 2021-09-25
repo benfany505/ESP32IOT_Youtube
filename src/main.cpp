@@ -1,84 +1,76 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <CTBot.h>
 
-#define led 23
 // Deklarasi Variable dan Konstanta
 String wifiSSID = "smartbuilding_wifi";
 String wifiPassword = "smartbuilding@2020";
-String mqttBroker = "test.mosquitto.org";
-WiFiClient client;
-PubSubClient mqtt(client);
+CTBot myBot;
+String token = "2014994585:AAG_4--yI3CrcTW1c-rbRPBimqlEVOCVWLc";
+TBMessage tMessage;
+#define TEMP_CALLBACK "/get_temp"
+#define HUM_CALLBACK "/get_hum"
 
+CTBotInlineKeyboard myKbd;
 // Deklarasi Fungsi
 void connectWifi();
-void connect_mqtt();
-String randomTemp();
-void mqttReceivedMessage(char *topic, byte *msg, unsigned int msgLength);
+void loginTelegram();
+String randTemp();
+String randHum();
 void setup()
 {
-  pinMode(led, OUTPUT);
   Serial.begin(9600);
   connectWifi();
-  mqtt.setServer(mqttBroker.c_str(), 1883);
-  mqtt.setCallback(mqttReceivedMessage);
+  loginTelegram();
 }
 
 void loop()
 {
-  if (!mqtt.connected())
-  {
-    connect_mqtt();
-    Serial.println("MQTT Connected");
-    mqtt.publish("esp32/temphum", "ESP 32 Online!");
-  }
-  mqtt.loop();
-  // mqtt.publish("esp32/temphum", randomTemp().c_str());
-  // delay(1000);
-}
 
-void mqttReceivedMessage(char *topic, byte *msg, unsigned int msgLength)
-{
-  if (String(topic) == "esp32/temphum")
+  //Your Code
+
+  if (myBot.getNewMessage(tMessage))
   {
-    Serial.println(topic);
-    String perintah = "";
-    for (int i = 0; i < msgLength; i++)
+
+    Serial.println(tMessage.sender.firstName);
+    if (tMessage.messageType == CTBotMessageText)
     {
-      Serial.print(char(msg[i]));
-      perintah += String(char(msg[i]));
-    }
-    Serial.println("");
-    Serial.println(perintah);
-    if (perintah == "ON")
-    {
-      digitalWrite(led, 1);
-    }
-    else if (perintah == "OFF")
-    {
-      digitalWrite(led, 0);
+      Serial.println(tMessage.text);
+      if (tMessage.text.equalsIgnoreCase("/start"))
+      {
+        String reply = "";
+        reply += "Hi, welcome to HobTechTv\n";
+        reply += "Command List :\n";
+        reply += "Get Temperature : /get_temp \n";
+        reply += "Get Humidity : /get_hum \n";
+        myBot.sendMessage(tMessage.sender.id, reply);
+      }
+      else if (tMessage.text.equalsIgnoreCase("/get_temp"))
+      {
+        myBot.sendMessage(tMessage.sender.id, randTemp() + " degC");
+      }
+      else if (tMessage.text.equalsIgnoreCase("/get_hum"))
+      {
+        myBot.sendMessage(tMessage.sender.id, randHum() + " %");
+      }
     }
   }
 }
 
-String randomTemp()
+String randTemp()
 {
-
-  int randTemp = random(20, 40);
-  Serial.println(randTemp);
-  return String(randTemp);
+  float randDec = random(0, 99);
+  randDec /= 100;
+  int randVal = random(20, 40);
+  return String(randVal + randDec);
 }
 
-void connect_mqtt()
+String randHum()
 {
-  while (!mqtt.connected())
-  {
-    Serial.println("Connecting MQTT...");
-    if (mqtt.connect("esp32"))
-    {
-      mqtt.subscribe("esp32/temphum");
-    }
-  }
+  float randDec = random(0, 99);
+  randDec /= 100;
+  int randVal = random(40, 80);
+  return String(randVal + randDec);
 }
 
 void connectWifi()
@@ -98,4 +90,20 @@ void connectWifi()
   Serial.println(WiFi.localIP());
   Serial.println(WiFi.gatewayIP());
   Serial.println(WiFi.dnsIP());
+}
+
+void loginTelegram()
+{
+  Serial.print("login telegram");
+
+  while (!myBot.testConnection())
+  {
+    myBot.setTelegramToken(token);
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.println("Telegram Connection OK");
+  myKbd.addButton("GET TEMP", TEMP_CALLBACK, CTBotKeyboardButtonQuery);
+  myKbd.addButton("GET HUMIDITY", HUM_CALLBACK, CTBotKeyboardButtonQuery);
 }
