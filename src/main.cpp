@@ -5,13 +5,14 @@
 // Deklarasi Variable dan Konstanta
 String wifiSSID = "smartbuilding_wifi";
 String wifiPassword = "smartbuilding@2020";
-CTBot myBot;
-String token = "2014994585:AAG_4--yI3CrcTW1c-rbRPBimqlEVOCVWLc";
+
 TBMessage tMessage;
+String token = "1975299142:AAHaGG9EX32RHcjGWuF5q_5luBQcway9oLo";
+CTBot myBot;
+CTBotInlineKeyboard myKbd;
+
 #define TEMP_CALLBACK "/get_temp"
 #define HUM_CALLBACK "/get_hum"
-
-CTBotInlineKeyboard myKbd;
 // Deklarasi Fungsi
 void connectWifi();
 void loginTelegram();
@@ -27,31 +28,61 @@ void setup()
 void loop()
 {
 
-  //Your Code
-
   if (myBot.getNewMessage(tMessage))
   {
 
-    Serial.println(tMessage.sender.firstName);
+    Serial.println(tMessage.text);
     if (tMessage.messageType == CTBotMessageText)
     {
-      Serial.println(tMessage.text);
       if (tMessage.text.equalsIgnoreCase("/start"))
       {
         String reply = "";
-        reply += "Hi, welcome to HobTechTv\n";
-        reply += "Command List :\n";
+        reply += "Hi, welcome to HobtechBot\n";
+        reply += "Command List as below : \n";
         reply += "Get Temperature : /get_temp \n";
         reply += "Get Humidity : /get_hum \n";
-        myBot.sendMessage(tMessage.sender.id, reply);
+
+        myBot.sendMessage(tMessage.sender.id, reply, myKbd);
       }
       else if (tMessage.text.equalsIgnoreCase("/get_temp"))
       {
-        myBot.sendMessage(tMessage.sender.id, randTemp() + " degC");
+        String reply = "";
+        reply += "Temperature Reading : \n";
+        reply += randTemp() + " degC";
+        myBot.sendMessage(tMessage.sender.id, reply);
       }
       else if (tMessage.text.equalsIgnoreCase("/get_hum"))
       {
-        myBot.sendMessage(tMessage.sender.id, randHum() + " %");
+        String reply = "";
+        reply += "Humidity Reading : \n";
+        reply = randHum() + " %";
+        myBot.sendMessage(tMessage.sender.id, reply);
+      }
+      else
+      {
+        String reply = "";
+        reply += "Hi, welcome to HobtechBot\n";
+        reply += "Command is not valid plese use /start to get Command list! \n";
+
+        myBot.sendMessage(tMessage.sender.id, reply);
+      }
+    }
+    else if (tMessage.messageType == CTBotMessageQuery)
+    {
+      if (tMessage.callbackQueryData.equals(TEMP_CALLBACK))
+      {
+        String reply = "";
+        reply += "Temperature Reading : \n";
+        reply += randTemp() + " degC";
+
+        myBot.endQuery(tMessage.callbackQueryID, reply, true);
+      }
+      else if (tMessage.callbackQueryData.equals(HUM_CALLBACK))
+      {
+        String reply = "";
+        reply += "Humidity Reading : \n";
+        reply += randHum() + " %";
+        myBot.endQuery(tMessage.callbackQueryID, reply, true);
       }
     }
   }
@@ -61,7 +92,7 @@ String randTemp()
 {
   float randDec = random(0, 99);
   randDec /= 100;
-  int randVal = random(20, 40);
+  int randVal = random(20, 35);
   return String(randVal + randDec);
 }
 
@@ -94,16 +125,13 @@ void connectWifi()
 
 void loginTelegram()
 {
-  Serial.print("login telegram");
-
+  Serial.println("logging in...");
   while (!myBot.testConnection())
   {
     myBot.setTelegramToken(token);
-    Serial.print(".");
-    delay(500);
+    delay(1000);
   }
-  Serial.println();
-  Serial.println("Telegram Connection OK");
   myKbd.addButton("GET TEMP", TEMP_CALLBACK, CTBotKeyboardButtonQuery);
-  myKbd.addButton("GET HUMIDITY", HUM_CALLBACK, CTBotKeyboardButtonQuery);
+  myKbd.addButton("GET HUM", HUM_CALLBACK, CTBotKeyboardButtonQuery);
+  Serial.println("Telegram connection OK!");
 }
