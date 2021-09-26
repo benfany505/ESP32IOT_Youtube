@@ -133,5 +133,6 @@ void loginTelegram()
   }
   myKbd.addButton("GET TEMP", TEMP_CALLBACK, CTBotKeyboardButtonQuery);
   myKbd.addButton("GET HUM", HUM_CALLBACK, CTBotKeyboardButtonQuery);
+  myKbd.addRow();
   Serial.println("Telegram connection OK!");
 }
