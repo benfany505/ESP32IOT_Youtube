@@ -1,138 +1,29 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <CTBot.h>
+#include <BluetoothSerial.h>
 
-// Deklarasi Variable dan Konstanta
-String wifiSSID = "smartbuilding_wifi";
-String wifiPassword = "smartbuilding@2020";
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
 
-TBMessage tMessage;
-String token = "1975299142:AAHaGG9EX32RHcjGWuF5q_5luBQcway9oLo";
-CTBot myBot;
-CTBotInlineKeyboard myKbd;
+BluetoothSerial SerialBT;
 
-#define TEMP_CALLBACK "/get_temp"
-#define HUM_CALLBACK "/get_hum"
-// Deklarasi Fungsi
-void connectWifi();
-void loginTelegram();
-String randTemp();
-String randHum();
 void setup()
 {
+
   Serial.begin(9600);
-  connectWifi();
-  loginTelegram();
+  SerialBT.begin("Hobtech"); //Bluetooth device name
+  Serial.println("The device started, now you can pair it with bluetooth!");
 }
 
 void loop()
 {
-
-  if (myBot.getNewMessage(tMessage))
+  if (Serial.available())
   {
-
-    Serial.println(tMessage.text);
-    if (tMessage.messageType == CTBotMessageText)
-    {
-      if (tMessage.text.equalsIgnoreCase("/start"))
-      {
-        String reply = "";
-        reply += "Hi, welcome to HobtechBot\n";
-        reply += "Command List as below : \n";
-        reply += "Get Temperature : /get_temp \n";
-        reply += "Get Humidity : /get_hum \n";
-
-        myBot.sendMessage(tMessage.sender.id, reply, myKbd);
-      }
-      else if (tMessage.text.equalsIgnoreCase("/get_temp"))
-      {
-        String reply = "";
-        reply += "Temperature Reading : \n";
-        reply += randTemp() + " degC";
-        myBot.sendMessage(tMessage.sender.id, reply);
-      }
-      else if (tMessage.text.equalsIgnoreCase("/get_hum"))
-      {
-        String reply = "";
-        reply += "Humidity Reading : \n";
-        reply = randHum() + " %";
-        myBot.sendMessage(tMessage.sender.id, reply);
-      }
-      else
-      {
-        String reply = "";
-        reply += "Hi, welcome to HobtechBot\n";
-        reply += "Command is not valid plese use /start to get Command list! \n";
-
-        myBot.sendMessage(tMessage.sender.id, reply);
-      }
-    }
-    else if (tMessage.messageType == CTBotMessageQuery)
-    {
-      if (tMessage.callbackQueryData.equals(TEMP_CALLBACK))
-      {
-        String reply = "";
-        reply += "Temperature Reading : \n";
-        reply += randTemp() + " degC";
-
-        myBot.endQuery(tMessage.callbackQueryID, reply, true);
-      }
-      else if (tMessage.callbackQueryData.equals(HUM_CALLBACK))
-      {
-        String reply = "";
-        reply += "Humidity Reading : \n";
-        reply += randHum() + " %";
-        myBot.endQuery(tMessage.callbackQueryID, reply, true);
-      }
-    }
+    SerialBT.write(Serial.read());
   }
-}
-
-String randTemp()
-{
-  float randDec = random(0, 99);
-  randDec /= 100;
-  int randVal = random(20, 35);
-  return String(randVal + randDec);
-}
-
-String randHum()
-{
-  float randDec = random(0, 99);
-  randDec /= 100;
-  int randVal = random(40, 80);
-  return String(randVal + randDec);
-}
-
-void connectWifi()
-{
-  Serial.println("Connecting To Wifi");
-  WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
-  while (WiFi.status() != WL_CONNECTED)
+  if (SerialBT.available())
   {
-    Serial.print(".");
-    delay(500);
+    Serial.write(SerialBT.read());
   }
-
-  Serial.println("Wifi Connected");
-  Serial.println(WiFi.SSID());
-  Serial.println(WiFi.RSSI());
-  Serial.println(WiFi.macAddress());
-  Serial.println(WiFi.localIP());
-  Serial.println(WiFi.gatewayIP());
-  Serial.println(WiFi.dnsIP());
-}
-
-void loginTelegram()
-{
-  Serial.println("logging in...");
-  while (!myBot.testConnection())
-  {
-    myBot.setTelegramToken(token);
-    delay(1000);
-  }
-  myKbd.addButton("GET TEMP", TEMP_CALLBACK, CTBotKeyboardButtonQuery);
-  myKbd.addButton("GET HUM", HUM_CALLBACK, CTBotKeyboardButtonQuery);
-  myKbd.addRow();
-  Serial.println("Telegram connection OK!");
+  delay(20);
 }
