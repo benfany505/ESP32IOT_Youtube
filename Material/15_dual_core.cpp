@@ -3,6 +3,7 @@
 #include <ESP32Ping.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <ThingsBoard.h>
 
 String wifiSSID = "smartbuilding_wifi";
 String wifiPassword = "smartbuilding@2020";
