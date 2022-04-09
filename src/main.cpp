@@ -1,68 +1,51 @@
 #include <Arduino.h>
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
 
-#define SERVICE_UUID "de1bf7ab-1ca8-40a3-b797-6221c2acb33d"
-#define CHARACTERISTIC_UUID "3559f95b-3857-43f1-a7e0-cc0ab0542afc"
+TaskHandle_t task0, task1;
 
-#define Led 13
+int counter = 0;
 
-class callBackBLE : public BLECharacteristicCallbacks
+void taskHandler0(void *pvParameters)
 {
-
-    void onWrite(BLECharacteristic *pCharacteristic)
+    Serial.println("task0");
+    for (;;)
     {
-        std::string rxValue = pCharacteristic->getValue();
-        if (rxValue.length() > 0)
-        {
-            Serial.println("**********");
-            Serial.print("Recieved Value : ");
-            for (int i = 0; i < rxValue.length(); i++)
-            {
-                Serial.print(rxValue[i]);
-            }
-            Serial.println();
-            Serial.println("**********");
-        }
 
-        if (rxValue == "ON")
-        {
-            Serial.println("LED_ON");
-            digitalWrite(Led, HIGH);
-        }
+        Serial.print("Task 0 @ Counter : ");
+        // get core id
+        Serial.println(counter);
+        counter++;
+        delay(500);
+    }
+}
 
-        if (rxValue == "OFF")
+void taskHandler1(void *pvParameters)
+{
+    Serial.println("task1");
+    for (;;)
+    {
+        Serial.print("                           Task 1 @ Counter : ");
+        // get core id
+        Serial.println(counter);
+        delay(3000);
+        if (counter > 20)
         {
-            Serial.println("LED_OFF");
-            digitalWrite(Led, LOW);
+            // stop task0
+            vTaskSuspend(task0);
+            delay(5000);
+            // start task0
+            vTaskResume(task0);
         }
     }
-};
+}
 
 void setup()
 {
     Serial.begin(9600);
-
-    pinMode(Led, OUTPUT);
-    BLEDevice::init("ESP32_BLE");
-
-    BLEServer *pServer = BLEDevice::createServer();
-    BLEService *pService = pServer->createService(SERVICE_UUID);
-    BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-        CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-
-    pCharacteristic->setValue("Hello this is BLE default value");
-    pCharacteristic->setCallbacks(new callBackBLE());
-
-    pService->start();
-
-    BLEDevice::startAdvertising();
-
-    Serial.println("BLE READY!!!");
+    xTaskCreatePinnedToCore(taskHandler0, "Task0", 10000, NULL, 1, &task0, 0);
+    xTaskCreatePinnedToCore(taskHandler1, "Task1", 10000, NULL, 1, &task1, 1);
 }
 
 void loop()
 {
+    delay(100);
 }
