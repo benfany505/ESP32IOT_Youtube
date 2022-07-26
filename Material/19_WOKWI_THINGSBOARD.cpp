@@ -2,14 +2,10 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ThingsBoard.h>
-#include <ArduinoJson.h>
-
-#define GPIO13_PIN 13
-#define GPIO12_PIN 12
 
 // Deklarasi Variable dan Konstanta
-String wifiSSID = "smartbuilding_wifi";
-String wifiPassword = "smartbuilding@2020";
+String wifiSSID = "Wokwi-GUEST";
+String wifiPassword = "";
 
 // Thingsboard Credential
 String tbHost = "demo.thingsboard.io";
@@ -17,28 +13,17 @@ String tbToken = "C9omLqpnmP3BRD5PRbdO";
 
 WiFiClient client;
 ThingsBoard tb(client);
-PubSubClient mqtt(client);
-
-boolean gpioState[] = {false, false};
 
 // Deklarasi Fungsi
 void connectWifi();
 String randTemp();
 String randHum();
 void tbReconnect();
-void on_message(const char *topic, byte *payload, unsigned int length);
-void set_gpio_status(int pin, boolean enabled);
-String get_gpio_status();
 
 void setup()
 {
     Serial.begin(9600);
-    pinMode(GPIO12_PIN, OUTPUT);
-    pinMode(GPIO13_PIN, OUTPUT);
-    delay(10);
     connectWifi();
-    mqtt.setServer(tbHost.c_str(), 1883);
-    mqtt.setCallback(on_message);
 }
 
 void loop()
@@ -55,7 +40,6 @@ void loop()
     tb.sendTelemetryFloat("temperature", temp);
     tb.sendTelemetryFloat("humidity", hum);
     tb.loop();
-    mqtt.loop();
     delay(1000);
 }
 
@@ -87,10 +71,6 @@ void tbReconnect()
         Serial.println("connecting to thingsboard ... ");
         if (tb.connect(tbHost.c_str(), tbToken.c_str()))
         {
-            v1/devices/me/rpc/request/$request_id
-            mqtt.subscribe("v1/devices/me/rpc/request/+");
-            Serial.println("Sending current GPIO status ...");
-            mqtt.publish("v1/devices/me/attributes", get_gpio_status().c_str());
             Serial.println("Thingsboard Connected!");
         }
         else
@@ -119,32 +99,4 @@ void connectWifi()
     Serial.println(WiFi.localIP());
     Serial.println(WiFi.gatewayIP());
     Serial.println(WiFi.dnsIP());
-}
-
-void on_message(const char *topic, byte *payload, unsigned int length)
-{
-
-    Serial.println("On message");
-
-    char json[length + 1];
-    strncpy(json, (char *)payload, length);
-    json[length] = '\0';
-
-    Serial.print("Topic: ");
-    Serial.println(topic);
-    Serial.print("Message: ");
-    Serial.println(json);
-}
-
-String get_gpio_status()
-{
-    // Prepare gpios JSON payload string
-    StaticJsonDocument<200> jsonDoc;
-    jsonDoc[String(GPIO13_PIN)] = gpioState[0] ? true : false;
-    jsonDoc[String(GPIO12_PIN)] = gpioState[1] ? true : false;
-
-    String json;
-    serializeJson(jsonDoc, json);
-    Serial.println(json);
-    return json;
 }
